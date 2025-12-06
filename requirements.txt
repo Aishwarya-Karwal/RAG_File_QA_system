@@ -7,3 +7,7 @@ langchain
 tqdm
 streamlit
 PyMuPDF
+numpy
+openai
+python-dotenv
+google-generativeai

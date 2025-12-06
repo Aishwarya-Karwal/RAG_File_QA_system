@@ -17,3 +17,14 @@ Thumbs.db
 
 # Logs
 *.log
+
+# api key file
+.env
+
+# My Notes
+Notes.txt
+
+# Fiass Store
+data/vector_store/
+*.index
+*.pkl
