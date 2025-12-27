@@ -13,22 +13,29 @@ METADATA_PATH = os.path.join(INDEX_DIR, "metadata.pkl")
 
 def build_index_from_file(file_path:str, chunk_size:int=300, overlap:int=50):
     # 1- Load and chunk the document
-    text = load_document(file_path=file_path)
-    chunks= chunk_text(text, chunk_size=chunk_size, overlap=overlap)
-    print(f"[index] created {len(chunks)} chunks from document")
+    text_lst = load_document(file_path=file_path)
+    # chunks is a list of dicts with "text" and "metadata" as keys
+    chunks= chunk_text(
+        text_lst, 
+        file_name=os.path.basename(file_path),
+        chunk_size=chunk_size, 
+        overlap=overlap
+    )
+    print(f"Created {len(chunks)} chunks from document")
 
     #2- embeddings generation
     embedder = Embedder(model_name = "all-MiniLM-L6-v2")
-    embeddings = embedder.embed_texts(chunks, batch_size = 64) #shape (N, dim)
+    texts = [c["text"] for c in chunks]
+    embeddings = embedder.embed_texts(texts, batch_size = 64) #shape (N, dim)
     dim = embeddings.shape[1]
-    print(f"[index] embeddings shape : {embeddings.shape}")
+    print(f"Embeddings shape : {embeddings.shape}")
 
     #3- create index or vector store
     store = FaissStore(dim=dim)
     store.create_index(embeddings, metadata = chunks)
     os.makedirs(INDEX_DIR, exist_ok=True)
     store.save(INDEX_PATH, METADATA_PATH)
-    print(f"[index] saved indexx -> {INDEX_PATH}")
+    print(f"Saved indexx -> {INDEX_PATH}")
 
 
 def query_index(query: str, top_k: int = 5):
@@ -41,16 +48,16 @@ def query_index(query: str, top_k: int = 5):
 
     q_emb = embedder.embed_query(query)
     results = store.search(q_emb, top_k=top_k)
-    print(results)
+    print(results) # stores - list of tuple of (index, score and metadata)
 
     """[
-  {"text": "coding interview patterns include sliding window...", "idx": 53},
+  {"text": "coding interview patterns include sliding window...", "metadata":,"idx": 53},
   {"text": "two pointers is a common interview pattern...", "idx": 21}
     ] --> list of dict with text and indx"""
     
     retrieved_chunks = [] # above example shows what this will contain
-    for ind, _, chunk in results:
-        d = {"text": chunk, "idx": ind}
+    for ind, _, meta in results:
+        d = {"text": meta["text"], "metadata":meta["metadata"], "idx": ind}
         retrieved_chunks.append(d)
     
     #print(retrieved_chunks)

@@ -23,6 +23,15 @@ class Embedder:
             batch = texts[i: i+batch_size]
             embedding = self.model.encode(batch,show_progress_bar=False, convert_to_numpy=True, normalize_embeddings=True) # normalize helps for cosine similarity by doing unit L2 norm, so that the dot product of 2 vectors is their cosine similarity - without giving much importancr tp magnitude - thus no bias to longer texts
             all_embeddings.append(embedding)
+            # all embeddings looks like below, if 2 is the batch size and 5 is the dim of an embedding
+            # all_embeddings =
+            # [
+            # array(shape=(2, 5)),
+            # array(shape=(2, 5))
+            # ]
+
+            # after vstack it becomes
+            # np.ndarray(shape=(4, 5)) which is what is required by FAISS index
         return np.vstack(all_embeddings)
     
     def embed_query(self, query : str) -> np.ndarray:

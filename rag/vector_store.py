@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import numpy as np
 import faiss
 import os
@@ -15,7 +15,7 @@ class FaissStore:
 
     Simple FAISS-backed vector store that keeps:
       - a FAISS index (on disk)
-      - a metadata list (texts or identifiers) stored via pickle
+      - a metadata list of dict (texts and identifiers) stored via pickle
     """
 
     def __init__(self, dim: int):
@@ -24,7 +24,7 @@ class FaissStore:
         self.index = None
         self.metadata = []
 
-    def create_index(self, embeddings:np.ndarray, metadata: List[str]) -> None:
+    def create_index(self, embeddings:np.ndarray, metadata: List[Dict]) -> None:
         """
          Build an IndexFlatIP (inner product) on normalized embeddings.
         embeddings: shape (N, dim)
@@ -63,7 +63,7 @@ class FaissStore:
         #set dimension from index
         self.dim = self.index.d
 
-    def search(self, query_emb: np.ndarray, top_k:int = 5) -> List[Tuple[int,float,str]]:
+    def search(self, query_emb: np.ndarray, top_k:int = 5) -> List[Tuple[int,float,dict]]:
         """
         Search the FAISS index for the top_k most similar embeddings to the query embedding.
         query_emb: 1d numpy array of shape (dim, )

@@ -23,9 +23,21 @@ class QAChain:
         """
         Construct the prompt for the LLM by injecting the reriiteved chunks
         """
-        context_text = "\n\n---\n\n".join([c["text"] for c in contexts])
-        prompt = f"""You are a helpful assistant. Use ONLY the context below to answer the question.
+        #context_text = "\n\n---\n\n".join([c["text"] for c in contexts])
+        context_blocks = []
+        for i, chunk in enumerate(contexts):
+            meta = chunk['metadata']
+            block = f"""
+            [Source {i+1}]
+            Text : {chunk['text']}
+            Source : {meta['source']}
+            Page : {meta['page_number']}"""
+            context_blocks.append(block.strip())
 
+        context_text = "\n".join(context_blocks)
+        prompt = f"""You are a helpful assistant. Use ONLY the context below to answer the question.
+        If the answer comes from multiple sources, cite all of them.
+        When you state a fact, add citation (from the context itself) like: (Source 1, Page 45)
         Context:
         {context_text}
 
