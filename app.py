@@ -1,93 +1,63 @@
 import os
-from loaders.document_loader import load_document
-from rag.chunker import chunk_text
-from rag.embedder import Embedder
-from rag.vector_store import FaissStore
-from rag.qa_chain import QAChain
-import numpy as np
-import google.generativeai as genai
+import streamlit as st
 
-INDEX_DIR = "data/vector_store"
-INDEX_PATH = os.path.join(INDEX_DIR, "faiss.index")
-METADATA_PATH = os.path.join(INDEX_DIR, "metadata.pkl")
+from rag.pipeline import build_index_from_file, query_index
 
-def build_index_from_file(file_path:str, chunk_size:int=300, overlap:int=50):
-    # 1- Load and chunk the document
-    text_lst = load_document(file_path=file_path)
-    # chunks is a list of dicts with "text" and "metadata" as keys
-    chunks= chunk_text(
-        text_lst, 
-        file_name=os.path.basename(file_path),
-        chunk_size=chunk_size, 
-        overlap=overlap
+INDEX_PATH = "data/vector_store/faiss.index"
+# streamlit config
+st.set_page_config(
+    page_title = "RAG Document QA System",
+    layout = "wide"
+)
+
+st.title("RAG Document📄 QA System")
+st.caption("RAG-based • Citations enabled • LLM-powered 🤖")
+
+# sidebar
+with st.sidebar:
+    st.header("📤 Upload Document")
+    uploaded_file = st.file_uploader(
+        "Upload a text or PDF document from which you want LLM powered answers.",
+        type = ["txt", "pdf"]
     )
-    print(f"Created {len(chunks)} chunks from document")
 
-    #2- embeddings generation
-    embedder = Embedder(model_name = "all-MiniLM-L6-v2")
-    texts = [c["text"] for c in chunks]
-    embeddings = embedder.embed_texts(texts, batch_size = 64) #shape (N, dim)
-    dim = embeddings.shape[1]
-    print(f"Embeddings shape : {embeddings.shape}")
+    st.markdown("---")
+    st.write("🔒 LLM: Disabled (Safe mode)")
+    st.write("📦 Vector Store: FAISS")
 
-    #3- create index or vector store
-    store = FaissStore(dim=dim)
-    store.create_index(embeddings, metadata = chunks)
-    os.makedirs(INDEX_DIR, exist_ok=True)
-    store.save(INDEX_PATH, METADATA_PATH)
-    print(f"Saved indexx -> {INDEX_PATH}")
+# stop if no file is uploaded
+if uploaded_file is None:
+    st.info("Please upload a document to proceed.")
+    st.stop()
+
+# save uploaded file
+os.makedirs("data/uploads", exist_ok = True)
+file_path = os.path.join("data/uploads", uploaded_file.name)
+
+with open(file_path, "wb") as f:
+    f.write(uploaded_file.read())
 
 
-def query_index(query: str, top_k: int = 5):
-    #Load embedder + index
-    embedder = Embedder(model_name = "all-MiniLM-L6-v2")
-    #Load store
-    # we need the dim - Faiss read_index sets it, but create an instanc with dim=0 first
-    store = FaissStore(dim=0)
-    store.load(INDEX_PATH, METADATA_PATH)
+st.success(f"Uploaded: **{uploaded_file.name}**")
 
-    q_emb = embedder.embed_query(query)
-    results = store.search(q_emb, top_k=top_k)
-    print(results) # stores - list of tuple of (index, score and metadata)
+# Caching - build index only once per document
+if not os.path.exists(INDEX_PATH):
+    with st.spinner("Processing document and building index..."):
+        build_index_from_file(file_path)
+    st.success("Index built successfully! You can now chat with the document.")
+else:
+    st.info("Index already exists. You can chat with the document.")
 
-    """[
-  {"text": "coding interview patterns include sliding window...", "metadata":,"idx": 53},
-  {"text": "two pointers is a common interview pattern...", "idx": 21}
-    ] --> list of dict with text and indx"""
-    
-    retrieved_chunks = [] # above example shows what this will contain
-    for ind, _, meta in results:
-        d = {"text": meta["text"], "metadata":meta["metadata"], "idx": ind}
-        retrieved_chunks.append(d)
-    
-    #print(retrieved_chunks)
-    qa_chain = QAChain()
-    final_answer = qa_chain.answer(query, retrieved_chunks)
 
-    print("\n=================FINAL ANSWER=================\n")
-    print(final_answer)
-    print("\n=========================================\n")
+# Chat interface
+st.markdown("---")
+st.header("💬 Ask Questions")
 
-    return final_answer
-   
+query = st.text_input("Enter your question about the document:")
 
-def main():
-    sample_file = r"D:\Books DSA\coding-interview-patterns-nail-your-next-coding-interview.pdf"
-    # run once to build the index
-    if not os.path.exists(INDEX_PATH):
-        build_index_from_file(sample_file)
+if query:
+    with st.spinner("🔍 Searching relevant chunks..."):
+        answer = query_index(query)
 
-    # query the index
-    query = "What is Topological sort?"
-    query_index(query, top_k=5)
-    # genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-    # print("Available Gemini Models:")
-    # for m in genai.list_models():
-    #     print(m.name, "=>", m.supported_generation_methods)
-
-    
-
-# so that running `python -m loaders.app` still works too
-if __name__ == "__main__":
-    main()
+    st.markdown("### 📝Response: ")
+    st.write(answer) 

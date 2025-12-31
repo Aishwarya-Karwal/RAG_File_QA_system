@@ -1,0 +1,72 @@
+import os
+from loaders.document_loader import load_document
+from rag.chunker import chunk_text
+from rag.embedder import Embedder
+from rag.vector_store import FaissStore
+from rag.qa_chain import QAChain
+
+
+# CONSTANTS
+INDEX_DIR = "data/vector_store"
+INDEX_PATH = os.path.join(INDEX_DIR, "faiss.index")
+METADATA_PATH = os.path.join(INDEX_DIR, "metadata.pkl")
+
+
+def build_index_from_file(file_path:str, chunk_size:int=300, overlap:int=50):
+    # 1- Load and chunk the document
+    text_lst = load_document(file_path=file_path)
+    # chunks is a list of dicts with "text" and "metadata" as keys
+    chunks= chunk_text(
+        text_lst, 
+        file_name=os.path.basename(file_path),
+        chunk_size=chunk_size, 
+        overlap=overlap
+    )
+    print(f"Created {len(chunks)} chunks from document")
+
+    #2- embeddings generation
+    embedder = Embedder(model_name = "all-MiniLM-L6-v2")
+    texts = [c["text"] for c in chunks]
+    embeddings = embedder.embed_texts(texts, batch_size = 64) #shape (N, dim)
+    dim = embeddings.shape[1]
+    print(f"Embeddings shape : {embeddings.shape}")
+
+    #3- create index or vector store
+    store = FaissStore(dim=dim)
+    store.create_index(embeddings, metadata = chunks)
+    os.makedirs(INDEX_DIR, exist_ok=True)
+    store.save(INDEX_PATH, METADATA_PATH)
+    print(f"Saved indexx -> {INDEX_PATH}")
+
+
+def query_index(query: str, top_k: int = 5):
+    #Load embedder + index
+    embedder = Embedder(model_name = "all-MiniLM-L6-v2")
+    #Load store
+    # we need the dim - Faiss read_index sets it, but create an instanc with dim=0 first
+    store = FaissStore(dim=0)
+    store.load(INDEX_PATH, METADATA_PATH)
+
+    q_emb = embedder.embed_query(query)
+    results = store.search(q_emb, top_k=top_k)
+    print(results) # stores - list of tuple of (index, score and metadata)
+
+    """[
+  {"text": "coding interview patterns include sliding window...", "metadata":,"idx": 53},
+  {"text": "two pointers is a common interview pattern...", "idx": 21}
+    ] --> list of dict with text and indx"""
+    
+    retrieved_chunks = [] # above example shows what this will contain
+    for ind, _, meta in results:
+        d = {"text": meta["text"], "metadata":meta["metadata"], "idx": ind}
+        retrieved_chunks.append(d)
+    
+    #print(retrieved_chunks)
+    qa_chain = QAChain()
+    final_answer = qa_chain.answer(query, retrieved_chunks)
+
+    print("\n=================FINAL ANSWER=================\n")
+    print(final_answer)
+    print("\n=========================================\n")
+
+    return final_answer

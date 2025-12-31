@@ -25,6 +25,7 @@ Thumbs.db
 Notes.txt
 
 # Fiass Store
+data/
 data/vector_store/
 *.index
 *.pkl
