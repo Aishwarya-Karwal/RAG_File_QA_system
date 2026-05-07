@@ -107,7 +107,7 @@ CHUNK_OVERLAP = 100
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # LLM settings
-LLM_MODEL = "gpt-3.5-turbo"
+LLM_MODEL = "gemini-flash-latest"
 TEMPERATURE = 0.7
 MAX_TOKENS = 500
 
@@ -125,7 +125,6 @@ TOP_K = 5
 ## Requirements
 
 Core dependencies:
-- `langchain` - LLM framework
 - `sentence-transformers` - Embedding models
 - `faiss-cpu` - Vector similarity search
 - `pypdf` - PDF processing
@@ -144,13 +143,6 @@ See `requirements.txt` for complete list with versions.
 - `query(question, top_k=5, temperature=0.7)` - Ask a question and get an answer
 - `clear_index()` - Clear the current index
 - `get_relevant_chunks(question, top_k=5)` - Get relevant chunks without generating answer
-
-## Examples
-
-Check the `examples/` directory for detailed usage examples:
-- `basic_usage.py` - Simple example
-- `pdf_processing.py` - Working with PDF files
-- `custom_config.py` - Using custom configuration
 
 ## Performance Tips
 
@@ -192,7 +184,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Built with [LangChain](https://github.com/langchain-ai/langchain)
 - Embeddings powered by [Sentence Transformers](https://www.sbert.net/)
 - Vector search by [FAISS](https://github.com/facebookresearch/faiss)
 
@@ -209,7 +200,6 @@ For issues and questions:
 - [ ] Support for more file formats (Excel, CSV)
 - [ ] Multi-language support
 - [ ] Advanced caching mechanisms
-- [ ] Real-time document updates
 - [ ] Streaming responses
 
 ---
