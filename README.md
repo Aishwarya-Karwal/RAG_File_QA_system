@@ -1,3 +1,5 @@
+<img width="1913" height="916" alt="image" src="https://github.com/user-attachments/assets/029bc6af-4a6f-440e-a452-1bc5f2a82368" />
+
 # RAG File QA System
 
 A powerful Retrieval-Augmented Generation (RAG) system for file-based Question Answering. This system enables you to load documents (PDF, text, etc.), process them through chunking and embedding, and query them intelligently using Large Language Models (LLMs).
