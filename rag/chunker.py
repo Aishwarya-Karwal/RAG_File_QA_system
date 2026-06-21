@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-def chunk_text(text_lst: str, file_name: str, chunk_size: int = 300, overlap: int = 50) -> List[Dict]:
+def chunk_text(text_lst: str, file_name: str, chunk_size: int = 2000, overlap: int = 300) -> List[Dict]:
     """
     Splits text into chunks with overlap and attaches metadata.
     

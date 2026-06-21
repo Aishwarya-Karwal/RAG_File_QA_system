@@ -5,6 +5,7 @@ from rag.chunker import chunk_text
 from rag.embedder import Embedder
 from rag.vector_store import FaissStore
 from rag.qa_chain import QAChain
+from reranker import Reranker
 
 
 # BASE DIR
@@ -25,7 +26,7 @@ def get_doc_id(file_path: str):
 # -----------------------------
 # BUILD INDEX (PER DOCUMENT)
 # -----------------------------
-def build_index_from_file(file_path: str, chunk_size: int = 300, overlap: int = 50):
+def build_index_from_file(file_path: str, chunk_size: int = 2000, overlap: int = 300):
 
     # create doc_id
     doc_id = get_doc_id(file_path)
@@ -92,7 +93,7 @@ def load_store(doc_id: str):
 # -----------------------------
 # QUERY (PER DOCUMENT)
 # -----------------------------
-def query_index(query: str, doc_ids: list, top_k: int = 5):
+def query_index(query: str, doc_ids: list, top_k: int = 30):
     embedder = Embedder(model_name="all-MiniLM-L6-v2")
 
     all_results = []
@@ -123,7 +124,27 @@ def query_index(query: str, doc_ids: list, top_k: int = 5):
             "idx": ind
         }
         retrieved_chunks.append(chunk)
-        sources.append(chunk)
+        #sources.append(chunk)
+    
+    # Reranking step
+    reranker = Reranker()
+
+    retrieved_chunks = reranker.rerank(
+        query,
+        retrieved_chunks,
+        top_k=5
+    )
+
+    sources = retrieved_chunks
+
+    print("\nTop retrieved chunks after reranking:\n")
+
+    for i, chunk in enumerate(retrieved_chunks):
+        print(
+            f"{i+1}. "
+            f"Page {chunk['metadata']['page_number']} "
+            f"Score={chunk['rerank_score']:.3f}"
+        )
 
     qa_chain = QAChain()
     final_answer = qa_chain.answer(query, retrieved_chunks)

@@ -7,11 +7,11 @@ UPLOAD_DIR = "data/uploads"
 VECTOR_DIR = "data/vector_store"
 
 st.set_page_config(
-    page_title="RAG Document QA System",
+    page_title="ChatWithDocs AI📄",
     layout="wide"
 )
 
-st.title("RAG Document📄 QA System")
+st.title("ChatWithDocs AI📄")
 st.caption("RAG-based • Multi-Document • LLM-powered 🤖")
 
 # -----------------------------
@@ -53,25 +53,31 @@ with st.sidebar:
 # -----------------------------
 # FILE UPLOAD + INDEX BUILD
 # -----------------------------
+if "processed_file" not in st.session_state:
+    st.session_state.processed_file = None
+
 if uploaded_file is not None:
 
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    if st.session_state.processed_file != uploaded_file.name:
 
-    file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.read())
+        file_path = os.path.join(
+            UPLOAD_DIR,
+            uploaded_file.name
+        )
 
-    st.success(f"Uploaded: **{uploaded_file.name}**")
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.read())
 
-    with st.spinner("Processing document and building index..."):
-        doc_id = build_index_from_file(file_path)
+        with st.spinner("Processing document and building index..."):
+            doc_id = build_index_from_file(file_path)
 
-    st.success(f"Index ready for **{doc_id}**")
+        st.session_state.processed_file = uploaded_file.name
 
-    # 🔥 Force refresh so new doc appears in list
-    st.rerun()
+        st.success(f"Index ready for {doc_id}")
 
+        st.rerun()
 
 # -----------------------------
 # STOP IF NO DOCUMENT SELECTED
@@ -118,5 +124,5 @@ if answer:
 - 📄 File: {src['metadata']['source']}
 - 📍 Page: {src['metadata']['page_number']}
 
-> {src['text'][:300]}...
+> {src['text'][:1000]}...
 """)

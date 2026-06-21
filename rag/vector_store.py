@@ -63,7 +63,7 @@ class FaissStore:
         #set dimension from index
         self.dim = self.index.d
 
-    def search(self, query_emb: np.ndarray, top_k:int = 5) -> List[Tuple[int,float,dict]]:
+    def search(self, query_emb: np.ndarray, top_k:int = 20) -> List[Tuple[int,float,dict]]:
         """
         Search the FAISS index for the top_k most similar embeddings to the query embedding.
         query_emb: 1d numpy array of shape (dim, )

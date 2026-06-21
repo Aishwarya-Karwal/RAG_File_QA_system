@@ -35,17 +35,23 @@ class QAChain:
             context_blocks.append(block.strip())
 
         context_text = "\n".join(context_blocks)
-        prompt = f"""You are a helpful assistant. Use ONLY the context below to answer the question.
-        If the answer comes from multiple sources, cite all of them.
-        When you state a fact, add citation (from the context itself) like: (Source 1, Page 45)
+        prompt = f"""
+        You are a helpful AI assistant answering questions from uploaded documents.
+
+        Use ONLY the provided context to answer the question.
+
+        If the answer is partially available, provide the best possible summarized answer.
+
+        Do NOT say "I don't have enough information" unless the context is completely unrelated.
+
         Context:
         {context_text}
 
-        Question: {query}
+        Question:
+        {query}
 
-        If answer is not in the context, say "I don't have enough information."
-        Keep your answer short and clear.
-        """.strip()
+        Answer in a clear and concise manner.
+        """
         
         return prompt
     
