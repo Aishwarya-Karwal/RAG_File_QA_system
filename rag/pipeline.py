@@ -5,7 +5,7 @@ from rag.chunker import chunk_text
 from rag.embedder import Embedder
 from rag.vector_store import FaissStore
 from rag.qa_chain import QAChain
-from reranker import Reranker
+from rag.reranker import Reranker
 
 
 # BASE DIR
